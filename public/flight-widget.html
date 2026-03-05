@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Flight Search Results - Horizontal View</title>
+    <style>
+        :root {
+            color: #0b0b0f;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 16px;
+            background: #f6f8fb;
+            overflow-x: hidden;
+        }
+
+        .flight-results {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Search Summary */
+        .search-summary {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .route-summary {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 1.1rem;
+        }
+
+        .flight-count {
+            background: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        /* Horizontal Scroll Container */
+        .flights-horizontal-container {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 8px 4px 20px 4px;
+            margin: 0 -4px;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 #f1f5f9;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+        }
+
+        .flights-horizontal-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .flights-horizontal-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 20px;
+        }
+
+        .flights-horizontal-container::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 20px;
+        }
+
+        .flights-horizontal-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Horizontal Cards Layout */
+        .flights-horizontal {
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+            width: max-content;
+            padding: 4px;
+        }
+
+        /* Flight Card - Horizontal Style */
+        .flight-card-horizontal {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            width: 300px;
+            min-width: 280px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flight-card-horizontal:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 28px rgba(0,0,0,0.15);
+            border-color: #3182ce;
+        }
+
+        /* Airline Badge */
+        .flight-card-horizontal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3182ce, #48bb78);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .flight-card-horizontal:hover::before {
+            opacity: 1;
+        }
+
+        /* Card Header */
+        .flight-header-horizontal {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .airline-horizontal {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .airline-logo-horizontal {
+            width: 32px;
+            height: 32px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .airline-name-horizontal {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1a202c;
+        }
+
+        .price-horizontal {
+            background: #48bb78;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: -0.5px;
+        }
+
+        /* Route Timeline */
+        .route-timeline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 16px 0;
+            padding: 8px 0;
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        .timeline-point {
+            text-align: center;
+            flex: 1;
+        }
+
+        .timeline-time {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        .timeline-code {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        .timeline-line {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 4px;
+        }
+
+        .timeline-duration {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-bottom: 4px;
+            white-space: nowrap;
+        }
+
+        .timeline-path {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #cbd5e0, #94a3b8);
+            position: relative;
+        }
+
+        .timeline-path::after {
+            content: '✈️';
+            position: absolute;
+            top: -8px;
+            right: -4px;
+            font-size: 0.7rem;
+            background: white;
+            padding: 2px;
+            border-radius: 50%;
+        }
+
+        /* Flight Features */
+        .flight-features {
+            display: flex;
+            gap: 12px;
+            margin: 16px 0;
+            padding: 8px 0;
+            border-top: 1px dashed #e2e8f0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .feature-item {
+            flex: 1;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #4a5568;
+        }
+
+        .feature-icon {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .feature-label {
+            font-weight: 500;
+        }
+
+        /* Stops Indicator */
+        .stops-horizontal {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .stops-dots {
+            display: flex;
+            gap: 2px;
+        }
+
+        .stop-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #48bb78;
+        }
+
+        .stop-dot.multiple {
+            background: #ed8936;
+        }
+
+        /* Book Button */
+        .book-button-horizontal {
+            background: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 20px;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .book-button-horizontal:hover {
+            background: #2c5282;
+            transform: scale(1.02);
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+
+        .loading-spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #3182ce;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error State */
+        .error {
+            text-align: center;
+            padding: 40px 20px;
+            color: #e53e3e;
+            background: #fff5f5;
+            border-radius: 12px;
+            border: 1px solid #feb2b2;
+        }
+
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        /* No Flights State */
+        .no-flights {
+            text-align: center;
+            padding: 40px 20px;
+            color: #718096;
+            background: white;
+            border-radius: 12px;
+            border: 1px dashed #cbd5e0;
+        }
+
+        /* Scroll Hint */
+        .scroll-hint {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 12px 0 8px;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            align-items: center;
+        }
+
+        .scroll-hint span {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .flight-card-horizontal {
+                width: 260px;
+                min-width: 260px;
+                padding: 16px;
+            }
+            
+            .price-horizontal {
+                font-size: 1rem;
+                padding: 4px 10px;
+            }
+            
+            .timeline-time {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="flight-results" id="root">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            Searching for the best flights...
+        </div>
+    </div>
+
+    <script type="module">
+        const root = document.getElementById('root');
+        let rpcId = 0;
+        let currentSearchParams = null;
+        const pendingRequests = new Map();
+
+        // MCP Apps bridge setup
+        const rpcNotify = (method, params) => {
+            window.parent.postMessage({ jsonrpc: "2.0", method, params }, "*");
+        };
+
+        const rpcRequest = (method, params) => new Promise((resolve, reject) => {
+            const id = ++rpcId;
+            pendingRequests.set(id, { resolve, reject });
+            window.parent.postMessage({ jsonrpc: "2.0", id, method, params }, "*");
+        });
+
+        window.addEventListener('message', (event) => {
+            if (event.source !== window.parent) return;
+            const message = event.data;
+            if (!message || message.jsonrpc !== "2.0") return;
+
+            if (typeof message.id === 'number') {
+                const pending = pendingRequests.get(message.id);
+                if (!pending) return;
+                pendingRequests.delete(message.id);
+                
+                if (message.error) {
+                    pending.reject(message.error);
+                    return;
+                }
+                pending.resolve(message.result);
+                return;
+            }
+
+            if (message.method === 'ui/notifications/tool-result') {
+                updateFlights(message.params);
+            }
+        });
+
+        const initializeBridge = async () => {
+            try {
+                await rpcRequest("ui/initialize", {
+                    appInfo: { name: "flight-widget", version: "1.0.0" },
+                    appCapabilities: {},
+                    protocolVersion: "2026-01-26"
+                });
+                rpcNotify("ui/notifications/initialized", {});
+            } catch (error) {
+                console.error("Failed to initialize bridge:", error);
+            }
+        };
+
+        initializeBridge();
+
+        function formatPrice(priceRaw) {
+            const amount = priceRaw / 1000;
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function formatDuration(duration) {
+            if (typeof duration === 'string' && duration.includes('h')) {
+                return duration;
+            }
+            
+            if (typeof duration === 'number') {
+                const hours = Math.floor(duration / 60);
+                const minutes = duration % 60;
+                return `${hours}h ${minutes > 0 ? minutes + 'm' : ''}`;
+            }
+            
+            return duration || '1h 05m';
+        }
+
+        function getStopText(stopCount) {
+            if (stopCount === 0) return 'Nonstop';
+            if (stopCount === 1) return '1 Stop';
+            return `${stopCount} Stops`;
+        }
+
+        function getAirlineLogo(airline) {
+            const logos = {
+                'IndiGo': '🎯',
+                'Air India Express': '🇮🇳',
+                'Akasa Air': '☁️',
+                'SpiceJet': '🌶️',
+                'Vistara': '✨',
+                'Go First': '🦘',
+                'Air India': '🦚',
+                'Emirates': '✈️',
+                'Qatar': '🐪',
+                'Singapore Airlines': '🦁'
+            };
+            return logos[airline] || '✈️';
+        }
+
+        function getAirlineColor(airline) {
+            const colors = {
+                'IndiGo': '#48bb78',
+                'Air India Express': '#f56565',
+                'Akasa Air': '#4299e1',
+                'SpiceJet': '#ed8936',
+                'Vistara': '#9f7aea',
+                'Emirates': '#ecc94b'
+            };
+            return colors[airline] || '#3182ce';
+        }
+
+        function renderHorizontalFlights(flights, searchParams = null) {
+            if (!flights || flights.length === 0) {
+                root.innerHTML = `
+                    <div class="no-flights">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🛫</div>
+                        <h3>No Flights Found</h3>
+                        <p>Try different dates or destinations</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build search summary
+            let summaryHtml = '';
+            if (searchParams) {
+                summaryHtml = `
+                    <div class="search-summary">
+                        <span class="route-summary">
+                            <span style="color: #3182ce;">${searchParams.from}</span> → 
+                            <span style="color: #48bb78;">${searchParams.to}</span>
+                            ${searchParams.date ? ` · ${new Date(searchParams.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+                            ${searchParams.adults ? ` · ${searchParams.adults} ${searchParams.adults > 1 ? 'Adults' : 'Adult'}` : ''}
+                        </span>
+                        <span class="flight-count">${flights.length} flights</span>
+                    </div>
+                `;
+            }
+
+            // Build horizontal cards
+            let flightsHtml = '';
+            flights.forEach((flight, index) => {
+                const price = formatPrice(flight.priceRaw);
+                const bookLink = Array.isArray(flight.deeplink) ? flight.deeplink[0] : flight.deeplink || '#';
+                const stopText = getStopText(flight.stopCount);
+                const airlineLogo = getAirlineLogo(flight.airline);
+                const duration = formatDuration(flight.duration);
+                const airlineColor = getAirlineColor(flight.airline);
+                
+                flightsHtml += `
+                    <div class="flight-card-horizontal" style="border-top: 3px solid ${airlineColor};">
+                        <div class="flight-header-horizontal">
+                            <div class="airline-horizontal">
+                                <div class="airline-logo-horizontal" style="background: ${airlineColor}20; color: ${airlineColor};">
+                                    ${airlineLogo}
+                                </div>
+                                <span class="airline-name-horizontal">${flight.airline}</span>
+                            </div>
+                            <span class="price-horizontal" style="background: ${airlineColor};">${price}</span>
+                        </div>
+
+                        <div class="route-timeline">
+                            <div class="timeline-point">
+                                <div class="timeline-time">${flight.departureTime}</div>
+                                <div class="timeline-code">${flight.from}</div>
+                            </div>
+                            <div class="timeline-line">
+                                <div class="timeline-duration">${duration}</div>
+                                <div class="timeline-path"></div>
+                            </div>
+                            <div class="timeline-point">
+                                <div class="timeline-time">${flight.arrivalTime}</div>
+                                <div class="timeline-code">${flight.to}</div>
+                            </div>
+                        </div>
+
+                        <div class="flight-features">
+                            <div class="feature-item">
+                                <div class="feature-icon">🧳</div>
+                                <div class="feature-label">${flight.baggage || '20kg'}</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">🍽️</div>
+                                <div class="feature-label">${flight.meal || 'Meal'}</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">💺</div>
+                                <div class="feature-label">${flight.seats || 'Auto'}</div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
+                            <div class="stops-horizontal">
+                                <span class="stops-dots">
+                                    ${Array(flight.stopCount || 1).fill('<span class="stop-dot"></span>').join('')}
+                                </span>
+                                <span>${stopText}</span>
+                            </div>
+                            ${flight.refundable ? 
+                                '<span style="color: #48bb78; font-size: 0.7rem; background: #48bb7820; padding: 2px 8px; border-radius: 12px;">✅ Refundable</span>' : 
+                                '<span style="color: #a0aec0; font-size: 0.7rem;">Non-refundable</span>'
+                            }
+                        </div>
+
+                        <a href="${bookLink}" target="_blank" rel="noopener noreferrer" class="book-button-horizontal" style="background: ${airlineColor};">
+                            Book Now
+                        </a>
+                    </div>
+                `;
+            });
+
+            // Complete HTML with horizontal scroll container
+            root.innerHTML = `
+                ${summaryHtml}
+                <div class="scroll-hint">
+                    <span>←</span>
+                    <span style="color: #3182ce;">Swipe to see more flights</span>
+                    <span>→</span>
+                </div>
+                <div class="flights-horizontal-container">
+                    <div class="flights-horizontal">
+                        ${flightsHtml}
+                    </div>
+                </div>
+            `;
+
+            // Auto-scroll hint (optional)
+            setTimeout(() => {
+                const container = document.querySelector('.flights-horizontal-container');
+                if (container && container.scrollWidth > container.clientWidth) {
+                    container.scrollBy({ left: 100, behavior: 'smooth' });
+                }
+            }, 500);
+        }
+
+        function updateFlights(response) {
+            // Check for error
+            if (response?.structuredContent?.error) {
+                root.innerHTML = `
+                    <div class="error">
+                        <div class="error-icon">⚠️</div>
+                        <h3>Something went wrong</h3>
+                        <p>${response.structuredContent.error}</p>
+                        <button onclick="window.location.reload()" style="
+                            background: #3182ce;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            padding: 8px 16px;
+                            margin-top: 16px;
+                            cursor: pointer;
+                        ">Try Again</button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Extract flights from response
+            const flights = response?.structuredContent?.flights || response?.flights || [];
+            
+            // Extract search params if available
+            const searchParams = response?.searchParams || currentSearchParams || 
+                (response?.structuredContent?.searchParams) || null;
+            
+            renderHorizontalFlights(flights, searchParams);
+        }
+
+        // Helper to get search params from URL or context
+        function getSearchParams() {
+            return null;
+        }
+
+        // Handle window resize
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                // Re-render if needed
+            }, 250);
+        });
+    </script>
+</body>
+</html>

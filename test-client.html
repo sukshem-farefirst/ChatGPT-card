@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Flight MCP</title>
+</head>
+<body>
+    <h1>Test Flight MCP Server</h1>
+    <button onclick="testTools()">Test Tools List</button>
+    <button onclick="testSearch()">Test Flight Search</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testTools() {
+            const response = await fetch('http://localhost:8787/mcp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "tools/list"
+                })
+            });
+            const data = await response.json();
+            document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testSearch() {
+            const response = await fetch('http://localhost:8787/mcp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 2,
+                    method: "tools/call",
+                    params: {
+                        name: "search_flights",
+                        arguments: {
+                            from: "IXE",
+                            to: "BLR",
+                            adults: 1
+                        }
+                    }
+                })
+            });
+            const data = await response.json();
+            document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
