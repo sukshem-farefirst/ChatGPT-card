@@ -2,51 +2,59 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>FareFirst Flight Search</title>
+    <title>FareFirst Flights</title>
     <style>
       *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      /*
+       * KEY FIX FOR BLANK SPACE:
+       * The widget iframe is always mounted by ChatGPT (because _meta.ui is on
+       * the tool definition — required by the SDK). To prevent a blank white
+       * block appearing on text-only responses, we:
+       *   1. Start with html/body height: 0 and overflow: hidden
+       *   2. Only expand to full height when real flight data arrives
+       * This makes the iframe invisible/zero-height for all non-flight responses.
+       */
+      html, body {
+        height: 0;
+        overflow: hidden;
         background: transparent;
-        padding: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         color: white;
       }
 
+      /* Expanded state — set by JS when flights arrive */
+      html.has-flights, html.has-flights body {
+        height: auto;
+        overflow: visible;
+      }
+
+      body.has-flights {
+        padding: 16px;
+        min-height: 200px;
+      }
+
+      /* Carousel */
       .carousel-container { position: relative; width: 100%; overflow: hidden; }
       .carousel-track { display: flex; gap: 16px; transition: transform 0.35s ease; }
 
       .carousel-btn {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        background: #374151;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 18px;
-        color: white;
-        z-index: 10;
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: 34px; height: 34px; border-radius: 50%;
+        background: #374151; border: none;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; font-size: 18px; color: white; z-index: 10;
       }
       .carousel-btn:hover { background: #4b5563; }
       .carousel-prev { left: -8px; }
       .carousel-next { right: -8px; }
 
+      /* Flight card */
       .flight-card {
-        background: #1f2937;
-        border-radius: 18px;
-        width: 300px;
-        min-width: 300px;
-        padding: 18px;
+        background: #1f2937; border-radius: 18px;
+        width: 300px; min-width: 300px; padding: 18px;
         border: 1px solid rgba(255,255,255,0.12);
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
+        display: flex; flex-direction: column; gap: 16px;
       }
 
       .badge { font-size: 12px; color: #60a5fa; font-weight: 600; }
@@ -61,11 +69,9 @@
 
       .airline-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
       .airline-logo {
-        width: 26px; height: 26px;
-        background: white; color: black;
-        border-radius: 6px;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 12px; flex-shrink: 0;
+        width: 26px; height: 26px; background: white; color: black;
+        border-radius: 6px; display: flex; align-items: center;
+        justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;
       }
 
       .timeline-row { display: flex; align-items: center; justify-content: space-between; }
@@ -73,44 +79,30 @@
       .airport { font-size: 11px; color: #9ca3af; margin-top: 2px; }
 
       .line {
-        flex: 1; height: 2px;
-        background: #4b5563;
-        margin: 0 10px;
-        position: relative;
+        flex: 1; height: 2px; background: #4b5563;
+        margin: 0 10px; position: relative;
       }
       .duration {
-        position: absolute;
-        top: -10px; left: 50%;
+        position: absolute; top: -10px; left: 50%;
         transform: translateX(-50%);
-        font-size: 11px; color: #9ca3af;
-        background: #1f2937;
-        padding: 0 4px;
-        white-space: nowrap;
+        font-size: 11px; color: #9ca3af; background: #1f2937;
+        padding: 0 4px; white-space: nowrap;
       }
 
       .stop { text-align: center; font-size: 11px; color: #34d399; margin-top: 6px; }
 
       .book-button {
-        margin-top: 6px;
-        background: #2563eb;
-        padding: 12px;
-        border-radius: 28px;
-        text-align: center;
-        font-weight: 600;
-        text-decoration: none;
-        color: white;
-        font-size: 14px;
-        display: block;
+        margin-top: 6px; background: #2563eb; padding: 12px;
+        border-radius: 28px; text-align: center; font-weight: 600;
+        text-decoration: none; color: white; font-size: 14px; display: block;
         transition: background 0.15s;
       }
       .book-button:hover { background: #1d4ed8; }
 
-      /* Widget is hidden until we confirm real flight data arrived */
       #root { display: none; }
       #root.visible { display: block; }
     </style>
   </head>
-
   <body>
     <div id="root"></div>
 
@@ -158,39 +150,36 @@
           });
           notify("ui/notifications/initialized", {});
         } catch (e) {
-          console.error("[widget] Bridge init error:", e);
+          console.error("[widget] bridge init error:", e);
         }
       }
 
       init();
 
-      // ── KEY FIX: Guard — only render when we have real flights ─────────────
+      // ── CORE GUARD ──────────────────────────────────────────────────────────
+      // ChatGPT sends tool-result for EVERY tool call — including plain-text
+      // responses (ambiguity, validation, errors). We must check for real flights.
       //
-      // ChatGPT sends "ui/notifications/tool-result" for EVERY tool call,
-      // even when the response is plain text with no structuredContent.
-      // We MUST check that structuredContent.flights is a non-empty array
-      // before showing anything. Otherwise "No flights found" appears on
-      // every text response.
-      //
+      // html/body starts at height:0 so the iframe takes no space.
+      // Only when we confirm flights > 0 do we expand and render.
+      // ───────────────────────────────────────────────────────────────────────
       function handleToolResult(params) {
         const sc      = params?.structuredContent;
         const flights = sc?.flights;
 
-        // Strict guard — all three conditions must pass
-        const hasFlights =
-          sc &&
-          Array.isArray(flights) &&
-          flights.length > 0;
+        const hasFlights = sc && Array.isArray(flights) && flights.length > 0;
 
         if (!hasFlights) {
-          // This was a text-only response (validation, ambiguity, error, etc.)
-          // Keep widget completely hidden — do nothing
-          console.log("[widget] No flight data — keeping widget hidden");
+          // Text-only response — keep widget at zero height, show nothing
+          console.log("[widget] No flight data — staying hidden");
           return;
         }
 
-        // Real flight data received — show the widget
+        // Expand the iframe to full height and render cards
+        document.documentElement.classList.add("has-flights");
+        document.body.classList.add("has-flights");
         root.classList.add("visible");
+
         renderFlights(flights, sc.searchParams);
       }
 
@@ -199,13 +188,10 @@
         if (amount == null) return "N/A";
         try {
           return new Intl.NumberFormat("en", {
-            style: "currency",
-            currency: currency || "USD",
+            style: "currency", currency: currency || "USD",
             maximumFractionDigits: 0,
           }).format(amount);
-        } catch {
-          return String(amount);
-        }
+        } catch { return String(amount); }
       }
 
       function formatTime(t) {
@@ -224,19 +210,19 @@
 
       // ── Card renderer ───────────────────────────────────────────────────────
       function renderCard(f, sp) {
-        const currency  = f.price?.currency || sp?.currency || "USD";
-        const priceAmt  = f.price?.amount ?? f.priceRaw;
-        const price     = formatPrice(priceAmt, currency);
-        const dep       = formatTime(f.departureTime);
-        const arr       = formatTime(f.arrivalTime);
-        const date      = formatDate(f.date || sp?.date);
-        const initial   = (f.airline || "F")[0].toUpperCase();
-        const stops     = f.stopCount ?? f.stops ?? 0;
-        const stopText  = stops === 0 ? "Direct" : `${stops} Stop${stops > 1 ? "s" : ""}`;
-        const duration  = f.durationFormatted || f.duration || "";
-        const bookUrl   = f.bookingLink || f.deeplink?.[0] || "#";
-        const from      = f.from || f.departureAirport || sp?.fromIata || "";
-        const to        = f.to   || f.arrivalAirport   || sp?.toIata   || "";
+        const currency = f.price?.currency || sp?.currency || "USD";
+        const priceAmt = f.price?.amount ?? f.priceRaw;
+        const price    = formatPrice(priceAmt, currency);
+        const dep      = formatTime(f.departureTime);
+        const arr      = formatTime(f.arrivalTime);
+        const date     = formatDate(f.date || sp?.date);
+        const initial  = (f.airline || "F")[0].toUpperCase();
+        const stops    = f.stopCount ?? f.stops ?? 0;
+        const stopText = stops === 0 ? "Direct" : `${stops} Stop${stops > 1 ? "s" : ""}`;
+        const duration = f.durationFormatted || f.duration || "";
+        const bookUrl  = f.bookingLink || f.deeplink?.[0] || "#";
+        const from     = f.from || f.departureAirport || sp?.fromIata || "";
+        const to       = f.to   || f.arrivalAirport   || sp?.toIata   || "";
 
         return `
           <div class="flight-card">
@@ -274,8 +260,7 @@
       }
 
       // ── Carousel ────────────────────────────────────────────────────────────
-      let idx   = 0;
-      let total = 0;
+      let idx = 0, total = 0;
 
       function renderFlights(flights, sp) {
         total = flights.length;
@@ -291,8 +276,8 @@
           </div>`;
       }
 
-      window.next = () => { if (idx < total - 1) idx++; slide(); };
-      window.prev = () => { if (idx > 0) idx--;        slide(); };
+      window.next = () => { if (idx < total - 1) { idx++; slide(); } };
+      window.prev = () => { if (idx > 0)          { idx--; slide(); } };
 
       function slide() {
         const t = document.getElementById("track");
