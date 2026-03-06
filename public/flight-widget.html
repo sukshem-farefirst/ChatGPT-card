@@ -4,7 +4,13 @@
     <meta charset="utf-8" />
     <title>FareFirst Flights</title>
     <style>
-      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
       /*
        * KEY FIX FOR BLANK SPACE:
@@ -15,16 +21,19 @@
        *   2. Only expand to full height when real flight data arrives
        * This makes the iframe invisible/zero-height for all non-flight responses.
        */
-      html, body {
+      html,
+      body {
         height: 0;
         overflow: hidden;
         background: transparent;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         color: white;
       }
 
       /* Expanded state — set by JS when flights arrive */
-      html.has-flights, html.has-flights body {
+      html.has-flights,
+      html.has-flights body {
         height: auto;
         overflow: visible;
       }
@@ -35,72 +44,174 @@
       }
 
       /* Carousel */
-      .carousel-container { position: relative; width: 100%; overflow: hidden; }
-      .carousel-track { display: flex; gap: 16px; transition: transform 0.35s ease; }
+      .carousel-container {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+      }
+      .carousel-track {
+        display: flex;
+        gap: 16px;
+        transition: transform 0.35s ease;
+      }
 
       .carousel-btn {
-        position: absolute; top: 50%; transform: translateY(-50%);
-        width: 34px; height: 34px; border-radius: 50%;
-        background: #374151; border: none;
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; font-size: 18px; color: white; z-index: 10;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #374151;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 18px;
+        color: white;
+        z-index: 10;
       }
-      .carousel-btn:hover { background: #4b5563; }
-      .carousel-prev { left: -8px; }
-      .carousel-next { right: -8px; }
+      .carousel-btn:hover {
+        background: #4b5563;
+      }
+      .carousel-prev {
+        left: -8px;
+      }
+      .carousel-next {
+        right: -8px;
+      }
 
       /* Flight card */
       .flight-card {
-        background: #1f2937; border-radius: 18px;
-        width: 300px; min-width: 300px; padding: 18px;
-        border: 1px solid rgba(255,255,255,0.12);
-        display: flex; flex-direction: column; gap: 16px;
+        background: #1f2937;
+        border-radius: 18px;
+        width: 300px;
+        min-width: 300px;
+        padding: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
       }
 
-      .badge { font-size: 12px; color: #60a5fa; font-weight: 600; }
+      .badge {
+        font-size: 12px;
+        color: #60a5fa;
+        font-weight: 600;
+      }
 
-      .route-row { display: flex; justify-content: space-between; align-items: flex-start; }
-      .route { font-size: 16px; font-weight: 600; }
-      .date  { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+      .route-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .route {
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .date {
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 2px;
+      }
 
-      .price { text-align: right; }
-      .price-value { font-size: 20px; font-weight: 700; }
-      .price-label { font-size: 11px; color: #9ca3af; }
+      .price {
+        text-align: right;
+      }
+      .price-value {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .price-label {
+        font-size: 11px;
+        color: #9ca3af;
+      }
 
-      .airline-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+      .airline-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
       .airline-logo {
-        width: 26px; height: 26px; background: white; color: black;
-        border-radius: 6px; display: flex; align-items: center;
-        justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;
+        width: 26px;
+        height: 26px;
+        background: white;
+        color: black;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12px;
+        flex-shrink: 0;
       }
 
-      .timeline-row { display: flex; align-items: center; justify-content: space-between; }
-      .time    { font-size: 15px; font-weight: 600; }
-      .airport { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+      .timeline-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .time {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .airport {
+        font-size: 11px;
+        color: #9ca3af;
+        margin-top: 2px;
+      }
 
       .line {
-        flex: 1; height: 2px; background: #4b5563;
-        margin: 0 10px; position: relative;
+        flex: 1;
+        height: 2px;
+        background: #4b5563;
+        margin: 0 10px;
+        position: relative;
       }
       .duration {
-        position: absolute; top: -10px; left: 50%;
+        position: absolute;
+        top: -10px;
+        left: 50%;
         transform: translateX(-50%);
-        font-size: 11px; color: #9ca3af; background: #1f2937;
-        padding: 0 4px; white-space: nowrap;
+        font-size: 11px;
+        color: #9ca3af;
+        background: #1f2937;
+        padding: 0 4px;
+        white-space: nowrap;
       }
 
-      .stop { text-align: center; font-size: 11px; color: #34d399; margin-top: 6px; }
+      .stop {
+        text-align: center;
+        font-size: 11px;
+        color: #34d399;
+        margin-top: 6px;
+      }
 
       .book-button {
-        margin-top: 6px; background: #2563eb; padding: 12px;
-        border-radius: 28px; text-align: center; font-weight: 600;
-        text-decoration: none; color: white; font-size: 14px; display: block;
+        margin-top: 6px;
+        background: #2563eb;
+        padding: 12px;
+        border-radius: 28px;
+        text-align: center;
+        font-weight: 600;
+        text-decoration: none;
+        color: white;
+        font-size: 14px;
+        display: block;
         transition: background 0.15s;
       }
-      .book-button:hover { background: #1d4ed8; }
+      .book-button:hover {
+        background: #1d4ed8;
+      }
 
-      #root { display: none; }
-      #root.visible { display: block; }
+      #root {
+        display: none;
+      }
+      #root.visible {
+        display: block;
+      }
     </style>
   </head>
   <body>
@@ -120,7 +231,10 @@
         new Promise((resolve, reject) => {
           const id = ++rpcId;
           pending.set(id, { resolve, reject });
-          window.parent.postMessage({ jsonrpc: "2.0", id, method, params }, "*");
+          window.parent.postMessage(
+            { jsonrpc: "2.0", id, method, params },
+            "*",
+          );
         });
 
       window.addEventListener("message", (e) => {
@@ -164,18 +278,19 @@
       // Only when we confirm flights > 0 do we expand and render.
       // ───────────────────────────────────────────────────────────────────────
       function handleToolResult(params) {
-        const sc      = params?.structuredContent;
+        const sc = params?.structuredContent;
         const flights = sc?.flights;
 
-        const hasFlights = sc && Array.isArray(flights) && flights.length > 0;
-
-        if (!hasFlights) {
-          // Text-only response — keep widget at zero height, show nothing
-          console.log("[widget] No flight data — staying hidden");
+        // ✅ Only render if flights exist AND sessionToken exists (i.e., API call succeeded)
+        if (
+          !Array.isArray(flights) ||
+          flights.length === 0 ||
+          !sc?.sessionToken
+        ) {
+          console.log("[widget] No flights yet — staying hidden");
           return;
         }
 
-        // Expand the iframe to full height and render cards
         document.documentElement.classList.add("has-flights");
         document.body.classList.add("has-flights");
         root.classList.add("visible");
@@ -188,10 +303,13 @@
         if (amount == null) return "N/A";
         try {
           return new Intl.NumberFormat("en", {
-            style: "currency", currency: currency || "USD",
+            style: "currency",
+            currency: currency || "USD",
             maximumFractionDigits: 0,
           }).format(amount);
-        } catch { return String(amount); }
+        } catch {
+          return String(amount);
+        }
       }
 
       function formatTime(t) {
@@ -204,7 +322,8 @@
       function formatDate(d) {
         if (!d) return "";
         return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
-          month: "short", day: "numeric",
+          month: "short",
+          day: "numeric",
         });
       }
 
@@ -212,17 +331,18 @@
       function renderCard(f, sp) {
         const currency = f.price?.currency || sp?.currency || "USD";
         const priceAmt = f.price?.amount ?? f.priceRaw;
-        const price    = formatPrice(priceAmt, currency);
-        const dep      = formatTime(f.departureTime);
-        const arr      = formatTime(f.arrivalTime);
-        const date     = formatDate(f.date || sp?.date);
-        const initial  = (f.airline || "F")[0].toUpperCase();
-        const stops    = f.stopCount ?? f.stops ?? 0;
-        const stopText = stops === 0 ? "Direct" : `${stops} Stop${stops > 1 ? "s" : ""}`;
+        const price = formatPrice(priceAmt, currency);
+        const dep = formatTime(f.departureTime);
+        const arr = formatTime(f.arrivalTime);
+        const date = formatDate(f.date || sp?.date);
+        const initial = (f.airline || "F")[0].toUpperCase();
+        const stops = f.stopCount ?? f.stops ?? 0;
+        const stopText =
+          stops === 0 ? "Direct" : `${stops} Stop${stops > 1 ? "s" : ""}`;
         const duration = f.durationFormatted || f.duration || "";
-        const bookUrl  = f.bookingLink || f.deeplink?.[0] || "#";
-        const from     = f.from || f.departureAirport || sp?.fromIata || "";
-        const to       = f.to   || f.arrivalAirport   || sp?.toIata   || "";
+        const bookUrl = f.bookingLink || f.deeplink?.[0] || "#";
+        const from = f.from || f.departureAirport || sp?.fromIata || "";
+        const to = f.to || f.arrivalAirport || sp?.toIata || "";
 
         return `
           <div class="flight-card">
@@ -260,11 +380,12 @@
       }
 
       // ── Carousel ────────────────────────────────────────────────────────────
-      let idx = 0, total = 0;
+      let idx = 0,
+        total = 0;
 
       function renderFlights(flights, sp) {
         total = flights.length;
-        idx   = 0;
+        idx = 0;
 
         root.innerHTML = `
           <div class="carousel-container">
@@ -276,8 +397,18 @@
           </div>`;
       }
 
-      window.next = () => { if (idx < total - 1) { idx++; slide(); } };
-      window.prev = () => { if (idx > 0)          { idx--; slide(); } };
+      window.next = () => {
+        if (idx < total - 1) {
+          idx++;
+          slide();
+        }
+      };
+      window.prev = () => {
+        if (idx > 0) {
+          idx--;
+          slide();
+        }
+      };
 
       function slide() {
         const t = document.getElementById("track");
